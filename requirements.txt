@@ -1,0 +1,1 @@
+# Python 3.12 or newer. The foundation uses only the standard library.

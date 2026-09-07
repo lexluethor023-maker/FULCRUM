@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FULCRUM Capture</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <header><span>LOCAL EVIDENCE INTAKE</span><h1>FULCRUM</h1></header>
+  <p>Select a passage on the page, then capture it with its source and timestamp.</p>
+  <label for="locator">Citation location</label>
+  <input id="locator" maxlength="2000" placeholder="Page, section, or paragraph">
+  <button id="capture">Capture selection</button>
+  <p id="status" role="status" aria-live="polite">Ready to capture.</p>
+  <details>
+    <summary>Connect to local FULCRUM</summary>
+    <p>Extension ID: <code id="extension-id"></code></p>
+    <label for="token">Local pairing token</label>
+    <input id="token" type="password" autocomplete="off">
+    <button id="save-token">Save connection</button>
+    <p>Use the token in your local configuration. It stays in this browser profile.</p>
+  </details>
+  <script src="popup.js"></script>
+</body>
+</html>

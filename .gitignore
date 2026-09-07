@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+*.py[cod]
+.env
+config/local.json
+data/
+database/
+logs/
+backups/
+*.db
+*.db-wal
+*.db-shm
+*.sqlite*
+.pytest_cache/
