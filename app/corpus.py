@@ -408,6 +408,7 @@ class Corpus:
         collection_id = report['collection_id']
         frontier = self.seed_frontier(collection_id)
         with self.store.connection() as db:
+            db.execute("UPDATE investigation_tasks SET status='superseded' WHERE collection_id=? AND status='pending'", (collection_id,))
             for action in report['next_actions']:
                 subject = action.get('scope') or action.get('node_id') or collection_id
                 task_key = digest(encode([collection_id, action['kind'], subject, action.get('field')]).encode())
@@ -424,7 +425,9 @@ class Corpus:
                 else:
                     citations = db.execute('''SELECT u.id,u.locator,u.text,d.title,d.capture_id FROM corpus_units u
                         JOIN corpus_documents d ON d.id=u.document_id JOIN collection_documents cd ON cd.document_id=d.id
-                        WHERE cd.collection_id=? ORDER BY u.id LIMIT 20''', (collection_id,)).fetchall()
+                        WHERE cd.collection_id=? AND (? <> 'citation_recovery' OR NOT EXISTS(
+                            SELECT 1 FROM citation_links l WHERE l.unit_id=u.id)) ORDER BY u.id LIMIT 20''',
+                        (collection_id, action['kind'])).fetchall()
                 packet = {'scope_snapshot_id': report['snapshot_id'], 'task': action,
                           'evidence_sample': [{**dict(r), 'text': r['text'][:4000]} for r in citations],
                           'sample_limit': 'Up to 20 records, 4000 characters each; retrieve full originals via capture IDs.',
@@ -432,7 +435,8 @@ class Corpus:
                               'Resolve identities before asserting connections.', 'Cite original documents and distinguish inference from verification.',
                               'Propose additional investigation areas supported by this collection, including disconfirming evidence.']}
                 db.execute('''INSERT INTO investigation_tasks VALUES(?,?,?,?,?,?,?,?,?)
-                    ON CONFLICT(task_key) DO UPDATE SET priority=excluded.priority,packet=excluded.packet''',
+                    ON CONFLICT(task_key) DO UPDATE SET priority=excluded.priority,packet=excluded.packet,
+                    status=CASE WHEN investigation_tasks.status='superseded' THEN 'pending' ELSE investigation_tasks.status END''',
                     (ident('INV'), collection_id, task_key, action['kind'], subject, action['priority'], 'pending', encode(packet), now()))
             tasks = [dict(r) for r in db.execute('SELECT id,kind,subject,priority,status FROM investigation_tasks WHERE collection_id=? ORDER BY priority,id', (collection_id,))]
         return {'scope': report, 'retrieval_frontier': frontier, 'investigation_tasks': tasks,

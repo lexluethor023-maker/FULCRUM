@@ -64,6 +64,9 @@ class CorpusTests(unittest.TestCase):
         edges = self.corpus.connections('Whole collection')
         self.assertTrue(any(x['basis'] == 'explicit_import' for x in edges))
         self.assertTrue(all(x['status'] == 'UNREVIEWED' for x in edges))
+        missing_task = next(x for x in production['investigation_tasks'] if x['kind'] == 'citation_recovery')
+        missing_packet = self.corpus.investigation_packet(missing_task['id'])
+        self.assertTrue(all('https://' not in x['text'] for x in missing_packet['packet']['evidence_sample']))
 
     def test_resume_and_changed_file_preserve_old_evidence(self):
         self.fixture()
