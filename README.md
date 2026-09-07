@@ -1,5 +1,9 @@
 # FULCRUM
 
+## Scheduled reasoning (v0.3)
+
+Use the included Codex task scheduler to run the research coordinator without a separate paid model API. Local workers perform bulk intake and retrieval; scheduled turns interpret evidence and checkpoint results into SQLite. See [scheduled operation](docs/scheduled-operation.md) for the runbook, commands, limits, and pause/resume behavior. The app schedule is configured separately and stays paused until the user's consolidated collection is ready.
+
 Local-first research operations with SQLite state, immutable evidence, deterministic workers, and explicit reasoning reviews.
 
 **Primary workflow: bulk collection intake.** Gather the material into a folder. FULCRUM inventories it, imports it as a resumable batch, indexes document passages and structured rows, derives scope from the collection, and prepares retrieval and reasoning work across multiple areas. No default historical subject is baked in. Edge Capture remains available for occasional additions.

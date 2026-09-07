@@ -77,6 +77,25 @@ def main():
     connections = sub.add_parser('connections')
     connections.add_argument('collection')
     connections.add_argument('--limit', type=int, default=100)
+    for name in ('scheduler-status', 'scheduler-start', 'scheduler-followups', 'scheduler-report'):
+        sub.add_parser(name)
+    next_work = sub.add_parser('scheduler-next')
+    next_work.add_argument('run_id')
+    next_work.add_argument('--limit', type=int, default=8)
+    next_work.add_argument('--max-chars', type=int, default=120000)
+    refresh = sub.add_parser('scheduler-refresh')
+    refresh.add_argument('run_id')
+    complete = sub.add_parser('scheduler-complete')
+    complete.add_argument('run_id')
+    complete.add_argument('work_id')
+    complete.add_argument('result_file', type=Path)
+    finish = sub.add_parser('scheduler-finish')
+    finish.add_argument('run_id')
+    finish.add_argument('summary')
+    followup = sub.add_parser('scheduler-resolve')
+    followup.add_argument('followup_id')
+    followup.add_argument('status', choices=['done', 'blocked'])
+    followup.add_argument('outcome')
     args = parser.parse_args()
     store = Store(args.root)
     command = args.command
@@ -118,6 +137,28 @@ def main():
             else:
                 from app.retrieval import Retriever
                 result = Retriever(corpus, args.allow_domain).run(args.collection, args.max_items, args.workers)
+        elif command.startswith('scheduler-'):
+            from app.coordinator import Coordinator
+            coordinator = Coordinator(store)
+            if command == 'scheduler-status':
+                result = coordinator.status()
+            elif command == 'scheduler-start':
+                result = coordinator.start()
+            elif command == 'scheduler-next':
+                result = coordinator.next(args.run_id, args.limit, args.max_chars)
+            elif command == 'scheduler-refresh':
+                result = coordinator.refresh_run(args.run_id)
+            elif command == 'scheduler-complete':
+                result = coordinator.complete(args.run_id, args.work_id,
+                    json.loads(args.result_file.read_text(encoding='utf-8-sig')))
+            elif command == 'scheduler-followups':
+                result = coordinator.followups()
+            elif command == 'scheduler-report':
+                result = coordinator.report()
+            elif command == 'scheduler-resolve':
+                result = coordinator.resolve_followup(args.followup_id, args.status, args.outcome)
+            else:
+                result = coordinator.finish(args.run_id, args.summary)
         elif command == 'serve':
             server = make_server(store, args.port)
             print(f'FULCRUM intake listening at http://127.0.0.1:{server.server_port}', flush=True)

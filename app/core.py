@@ -87,12 +87,14 @@ class Store:
                            'extension_origin': None, 'drive_root': None}, stream, indent=2)
         with self.connection() as db:
             version = db.execute('PRAGMA user_version').fetchone()[0]
-            if version > 2:
+            if version > 3:
                 raise ValueError('Database is newer than this application; refusing downgrade.')
             if version < 1:
                 db.executescript((Path(__file__).with_name('schema.sql')).read_text(encoding='utf-8'))
             if version < 2:
                 db.executescript((Path(__file__).parent / 'migrations/002_corpus.sql').read_text(encoding='utf-8'))
+            if version < 3:
+                db.executescript((Path(__file__).parent / 'migrations/003_scheduler.sql').read_text(encoding='utf-8'))
         return self.doctor()
 
     @contextmanager

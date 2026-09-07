@@ -201,7 +201,7 @@ class MigrationTests(unittest.TestCase):
             with store.connection() as db:
                 db.executescript((Path(__file__).parents[1] / 'app/schema.sql').read_text(encoding='utf-8'))
             capture = store.capture({'url': 'https://example.org/old', 'title': 'Existing evidence', 'text': 'Keep exact original.'})
-            self.assertEqual(store.initialize()['schema_version'], 2)
+            self.assertEqual(store.initialize()['schema_version'], 3)
             self.assertEqual(store.initialize()['counts']['captures'], 1)
             self.assertEqual(store.get_capture(capture['id'])['text'], 'Keep exact original.')
 
