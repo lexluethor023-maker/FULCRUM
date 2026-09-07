@@ -2,17 +2,30 @@
 
 Local-first research operations with SQLite state, immutable evidence, deterministic workers, and explicit reasoning reviews.
 
+**Primary workflow: bulk collection intake.** Gather the material into a folder. FULCRUM inventories it, imports it as a resumable batch, indexes document passages and structured rows, derives scope from the collection, and prepares retrieval and reasoning work across multiple areas. No default historical subject is baked in. Edge Capture remains available for occasional additions.
+
+## Bulk operation
+
+```powershell
+.\scripts\fulcrum.ps1 intake-plan 'D:\Research collection'
+.\scripts\fulcrum.ps1 --output data/reports/intake.json intake 'D:\Research collection' --collection 'Main corpus' --workers 4
+.\scripts\fulcrum.ps1 --output data/reports/production-plan.json production-plan 'Main corpus'
+.\scripts\fulcrum.ps1 search 'search terms' --collection 'Main corpus'
+```
+
+The folder above is an example. Use the actual consolidated collection. Supported inputs: PDF with readable text, DOCX, XLSX, CSV, TSV, JSON, JSONL, HTML, Markdown, and UTF-8/UTF-16 text. Originals remain unchanged. Optional `.fulcrum.json` sidecars preserve source URLs and declare column mappings. See [bulk intake and scope planning](docs/bulk-operation.md) for format assumptions, resume commands, retrieval, and limits.
+
 ## Architecture
 
 Edge selection / local file → intake → SHA-256 + provenance + deduplication → SQLite + local evidence spool → Google Drive evidence vault.
 
-ChatGPT receives evidence packets for reasoning and verification. Local workers handle mechanical operations only. No model API, API key, cloud database, or paid service is required for this foundation.
+ChatGPT receives evidence packets for reasoning and verification. Local workers handle mechanical operations only. No model API, API key, cloud database, or paid service is required. The bulk document parsers use pypdf and openpyxl, pinned in requirements.txt.
 
 The authoritative codebase is [lexluethor023-maker/FULCRUM](https://github.com/lexluethor023-maker/FULCRUM). Keep the checkout and live SQLite database outside Google Drive and OneDrive. The Drive folder receives immutable evidence and consistent database snapshots, never the live database.
 
 ## Start on Windows
 
-Python 3.12+ is required. No third-party Python packages are required.
+Python 3.12+ is required. The setup script installs the pinned document parsers in the project virtual environment.
 
 ```powershell
 # From this checkout; provide the full Python path if it is not on PATH.
@@ -54,7 +67,7 @@ For manual intake, create a UTF-8 JSON file:
 .\scripts\fulcrum.ps1 import-file C:\path\to\source.pdf --url https://example.org/source.pdf
 ```
 
-Text and file intake are limited to 4 MiB per item in this version. File intake stores exact bytes without parsing or claiming semantic knowledge. It returns metadata and a verified hash; text captures also return their text.
+Browser text intake is limited to 4 MiB per item; file intake supports up to 128 MiB. The individual `import-file` command stores exact bytes and provenance. The bulk `intake` command additionally extracts and indexes supported formats. Neither command automatically verifies historical assertions.
 
 ## Drive evidence and backups
 
@@ -88,7 +101,7 @@ node --test tests/edge.test.cjs
 .\scripts\fulcrum.ps1 doctor
 ```
 
-Python tests use isolated temporary databases and real loopback HTTP sockets. They cover byte preservation, concurrent deduplication, corruption detection, transactions, append-only records, stale leases, dead-letter retries, Drive staging, snapshot readback, input validation, authentication, and hostile browser origins. The optional Node tests exercise extension success/failure behavior with mocked browser APIs; they do not replace a real Edge installation test.
+Python tests use isolated temporary databases and real loopback HTTP sockets. They cover byte preservation, concurrent deduplication, corruption detection, transactions, append-only records, stale leases, dead-letter retries, Drive staging, snapshot readback, input validation, authentication, hostile browser origins, schema upgrades, batch resume, mixed file parsing, collection isolation, scope derivation, and a 10,000-record load check. Public retrieval is exercised with controlled responses and address/domain guards; tests do not crawl real websites. The optional Node tests exercise extension success/failure behavior with mocked browser APIs.
 
 ## Project layout
 

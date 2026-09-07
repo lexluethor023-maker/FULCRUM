@@ -64,6 +64,10 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(self.request('GET', '/api/captures/CAP-missing')[0], 404)
         self.assertEqual(self.request('GET', '/api/status')[1]['counts']['captures'], 0)
 
+    def test_second_intake_service_cannot_share_the_port(self):
+        with self.assertRaises(OSError):
+            make_server(self.store, port=self.server.server_port)
+
 
 if __name__ == '__main__':
     unittest.main()

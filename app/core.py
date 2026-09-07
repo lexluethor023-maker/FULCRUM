@@ -14,6 +14,7 @@ from urllib.parse import urlsplit, urlunsplit
 
 ROOT = Path(__file__).resolve().parents[1]
 MAX_BYTES = 4 * 1024 * 1024
+MAX_FILE_BYTES = 128 * 1024 * 1024
 VERDICTS = {'OPEN', 'VERIFIED', 'INFERENCE', 'HYPOTHESIS', 'ALLEGATION', 'CONFLICT'}
 
 
@@ -86,9 +87,12 @@ class Store:
                            'extension_origin': None, 'drive_root': None}, stream, indent=2)
         with self.connection() as db:
             version = db.execute('PRAGMA user_version').fetchone()[0]
-            if version > 1:
+            if version > 2:
                 raise ValueError('Database is newer than this application; refusing downgrade.')
-            db.executescript((Path(__file__).with_name('schema.sql')).read_text(encoding='utf-8'))
+            if version < 1:
+                db.executescript((Path(__file__).with_name('schema.sql')).read_text(encoding='utf-8'))
+            if version < 2:
+                db.executescript((Path(__file__).parent / 'migrations/002_corpus.sql').read_text(encoding='utf-8'))
         return self.doctor()
 
     @contextmanager
@@ -140,8 +144,8 @@ class Store:
 
     def import_file(self, path, title=None, url=None):
         path = Path(path)
-        if path.stat().st_size > MAX_BYTES:
-            raise ValueError('Foundation file intake is limited to 4 MiB per file.')
+        if path.stat().st_size > MAX_FILE_BYTES:
+            raise ValueError('File intake is limited to 128 MiB per file.')
         raw = path.read_bytes()
         source_url = canonical_url(url) if url else None
         return self._ingest(raw, source_url or f'sha256:{digest(raw)}', source_url,
@@ -349,6 +353,10 @@ class Store:
         settings = self.settings()
         return {'ok': integrity == 'ok' and foreign_keys == 0 and not bad,
                 'database_integrity': integrity, 'foreign_key_errors': foreign_keys, 'corrupt_evidence': bad,
-                'schema_version': 1, 'counts': counts, 'queue': queue,
+                'schema_version': self.schema_version(), 'counts': counts, 'queue': queue,
                 'drive_configured': bool(settings.get('drive_root')), 'cloud_verification': 'not connected',
                 'edge_extension_paired': bool(settings.get('extension_origin'))}
+
+    def schema_version(self):
+        with self.connection() as db:
+            return db.execute('PRAGMA user_version').fetchone()[0]

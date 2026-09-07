@@ -5,7 +5,7 @@
 - GitHub is the authoritative codebase. Runtime state and private evidence are never committed.
 - SQLite is the operating database on the laptop. WAL, foreign keys, short transactions, and a busy timeout support concurrent capture.
 - Google Drive is the intended durable evidence repository. A local content-addressed spool supports offline intake. A successful filesystem copy is recorded only as staging, never cloud verification.
-- Edge is the acquisition/action surface. This milestone implements user-invoked selection capture; scripted acquisition and external actions remain separate future work.
+- Bulk collection intake is the primary acquisition workflow. Edge is the acquisition/action surface for interactive sources and exceptions. Public citation retrieval can run deterministically in bounded batches without browser cookies.
 - Deterministic local code hashes, deduplicates, validates, archives, claims leases, and backs up.
 - ChatGPT reasons over explicit packets and returns reviews. No paid model integration or autonomous assertion of truth is built in.
 
@@ -29,11 +29,15 @@ The localhost service validates Host, bearer token, and any browser Origin. Only
 
 The schema version is recorded in SQLite and startup refuses a database version newer than the application. Future schema changes must be numbered transactional migrations with upgrade tests, not edits to already deployed v1 tables.
 
-## Next verified milestones
+## Bulk foundation (schema version 2)
 
-1. Sideload/pair Edge Capture in the chosen profile and perform the real source-selection round trip.
+The second migration adds collection manifests, resumable intake, extracted document units, SQLite FTS5 search, candidate nodes and links, scope dimensions, citation frontiers, and investigation packets. It preserves v1 captures. The investigation scope comes from imported data across all represented topics; no single target is predefined. See [bulk operation](bulk-operation.md).
+
+## Next integration milestones
+
+1. Import the user's consolidated collection when it is ready; inventory first, then verify batch and scope outputs.
 2. Configure the actual Google Drive desktop folder and verify a cloud file ID and content checksum through the connected Drive account.
-3. Add explicit legacy corpus import mappings, dry-run summaries, and identity reconciliation before loading existing material.
+3. Add collection-specific column mappings where required, and use reasoning packets for semantic classification and identity reconciliation.
 4. Build a local dashboard over these records and add supervised review/queue operations.
 5. Add a separate Edge acquisition profile and deterministic browser jobs with source-specific permission boundaries.
 

@@ -1,6 +1,7 @@
 import hmac
 import json
 import sqlite3
+import socket
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlsplit
 
@@ -102,6 +103,14 @@ def make_server(store, port=None):
                 self.respond(200 if result['deduplicated'] else 201, result)
             self.guarded(post)
 
-    server = ThreadingHTTPServer(('127.0.0.1', selected_port), Handler)
+    class LocalServer(ThreadingHTTPServer):
+        allow_reuse_address = False
+
+        def server_bind(self):
+            if hasattr(socket, 'SO_EXCLUSIVEADDRUSE'):
+                self.socket.setsockopt(socket.SOL_SOCKET, socket.SO_EXCLUSIVEADDRUSE, 1)
+            super().server_bind()
+
+    server = LocalServer(('127.0.0.1', selected_port), Handler)
     server.daemon_threads = True
     return server
